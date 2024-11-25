@@ -1,4 +1,6 @@
-from quiz import jou1, Joueur, quiz_add, read_quiz_file
+from itertools import count
+
+from quiz import Joueur, quiz_add, read_quiz_file
 from tkinter import *
 
 
@@ -12,27 +14,36 @@ class windows:
         self.window = Tk()
         self.window.title("QUIZ GAME")
 
-        self.window.minsize(width=600, height=500)
+        self.window.minsize(width=600, height=800)
         self.window.maxsize(width=700, height=800)
 
         l1 = Label(self.window, text="QUIZ GAME")
         l1.pack(pady=20)
 
-        l2 = Label(self.window, text="ENTER NAME TO CONTINUE", font=("Arial", 14, "bold"))
-        l2.pack(pady=20)
+        frame = Frame(self.window, relief=GROOVE, borderwidth=2,
+                      bg="dark slate gray")
+        frame.pack(pady=10, padx=10, fill=BOTH, expand=True)
 
-        ## la premiere fenetre
-        v = StringVar()
-        e1 = Entry(self.window, font=("Corbel", 18), bd=5, border=1, textvariable=v)
-        e1.pack()
+        # Add a label inside the frame
+        label = Label(frame, text="entrer vos choix de reponse : ", font=("Arial", 14), fg="white",
+                      bg="dark slate gray")
+        label.pack()
 
-        b1 = Button(self.window, text="Enter", bg='green', fg="yellow", width=30, height=5, command=self.Accueil)
-        b1.pack(pady=200)
+        ####### la premiere fenetre
+
+        self.v = StringVar()
+        Entry(self.window, font=("Corbel", 18), bd=5, border=1, textvariable=self.v).pack()
+
+        self.Joueur.nom = self.v.get()
+
+        Button(self.window, text="Enter", bg='green', fg="yellow", width=30, height=5, command=self.Accueil).pack(
+            pady=200)
 
         # Run the main loop
         self.window.mainloop()
 
     def game_begin(self, n):
+
         self.w3.withdraw()
 
         self.w4 = Toplevel(self.window)
@@ -41,10 +52,9 @@ class windows:
         self.w4.maxsize(width=700, height=800)
 
         # Create and pack the label for the new window
-        l1 = Label(self.w4, text="ONLINE", font="Arial 16 bold")
-        l1.pack(pady=20)
+        Label(self.w4, text="ONLINE", font="Arial 16 bold").pack(pady=20)
 
-        self.score_label = Label(self.w4, text=f"Score: {jou1.score}", font="Arial 14", bg="dim gray")
+        self.score_label = Label(self.w4, text=f"Score: {self.Joueur.score}", font="Arial 14", bg="dim gray")
         self.score_label.pack(pady=10)
 
         #######################################################################################################################################################
@@ -107,7 +117,7 @@ class windows:
                 # Check if the answer is correct
                 if c == self.question_data['correct_answer']:
                     # modification
-                    self.Joueur.update_score(points=1)  # Update the score
+                    self.Joueur.update_score(1)  # Update the score
                     Joueur.score += 1
 
                 # modification
@@ -129,7 +139,8 @@ class windows:
 
                     canvas2 = Canvas(self.w5, width=580, height=150, bg='ivory')
                     canvas2.pack(side=TOP, padx=10, pady=10)
-                    canvas2.create_text(290, 100, text=f" You've finished the quiz!. Score:{Joueur.score} ",
+                    canvas2.create_text(290, 100,
+                                        text=f" You've finished the quiz!. Score:{Joueur.score}. number of question {self.n}  ",
                                         font="Arial 12 italic",
                                         fill="black",
                                         width=550)
@@ -366,6 +377,3 @@ class windows:
             side=RIGHT,
             padx=10,
             pady=10)
-
-
-wi = windows(name="joan", joueur=jou1)

@@ -55,9 +55,9 @@ def quiz_add(q, c_1, c_2, c_3, c_4, cor_t):
 class Joueur:
     score = 0
 
-    def __init__(self, nom, score):
+    def __init__(self, nom, sco_re):
         self.nom = nom
-        self.score = score
+        self.score = sco_re
 
     ## fonction d'ajout du quiz
     #     def quiz_add(self,q,c1,c2,c3,c4,n):
@@ -152,7 +152,4 @@ class Joueur:
         self.score += points
 
 
-# Création d'une instance de Joueur
-jou1 = Joueur(nom="Player1", score=0)
-print("=============================")
-print(f"joueru {jou1.score}")
+

@@ -20,6 +20,8 @@ def read_quiz_file():
             data_list.append(data)
 
     return data_list
+
+
 ##################################################################
 
 
@@ -46,6 +48,7 @@ def quiz_add(q, c_1, c_2, c_3, c_4, cor_t):
         fichier.write(json.dumps(data) + "\n")
     print("Dictionnaires avec identifiants enregistrés.")
     print(data)
+
 
     return data
 
@@ -145,11 +148,5 @@ class Joueur:
             def setScore(self, s):
                 self.score = s
 
-
-
-
     def update_score(self, points):
         self.score += points
-
-
-

@@ -1,8 +1,8 @@
 from tkinter import messagebox
-
+import threading
 import customtkinter
 from customtkinter import CTkToplevel, CTkFrame, CTkLabel, CTkButton, CTkEntry
-
+from Time import Time
 from quiz import Joueur, quiz_add, read_quiz_file
 from tkinter import *
 import customtkinter
@@ -12,6 +12,8 @@ class windows(customtkinter.CTk):
 
     def __init__(self, name, joueur):
         super().__init__()
+
+        self.display_hello = lambda: print("hello word")
 
         self.name = name
         self.Joueur = joueur
@@ -39,7 +41,6 @@ class windows(customtkinter.CTk):
         self.v = StringVar()
         Entry(self.window, font=("Corbel", 18), bd=5, border=1, textvariable=self.v).pack()
 
-        self.Joueur.nom = self.v.get()
         customtkinter.CTkButton(self.window, text="Enter", command=self.Accueil).pack(pady=200)
 
         self.window.mainloop()
@@ -67,13 +68,33 @@ class windows(customtkinter.CTk):
         #######################################################################################################################################################
 
         #######################################################################################################################################################
+
         # Function to display the next question
         def display_question(i):
+
+            if i >= len(questions):
+                print("no more question")
+                return
+
             try:
-                # Réinitialiser la fenêtre
+                # Réinitialiser la fenêtre pour la nouvelle question
                 for widget in self.w4.winfo_children():
                     widget.destroy()
 
+                self.time_label = Label(self.w4, text="", font=("Helvetica", 16))
+                self.time_label.grid(row=0, column=1, columnspan=2, pady=10,
+                                     sticky="n")
+
+                ##=======================================================================================
+
+                ## lancer la minuterie dans une thread
+                stop_event = threading.Event()
+                self.time1 = Time(10, self.time_label, self.w4, stop_event, lambda: on_time_up(i))
+                timer_thread = threading.Thread(target=self.time1.update_time)
+
+                timer_thread.start()
+
+                ##=======================================================================================
                 # Ajouter un label pour le score
                 self.score_label = Label(self.w4, text=f"Score: {self.Joueur.score}", font="Arial 14", bg="dim gray")
                 self.score_label.grid(row=0, column=0, columnspan=2, pady=10, sticky="n")
@@ -125,13 +146,48 @@ class windows(customtkinter.CTk):
             #######################################################################################################################################################
 
             #######################################################################################################################################################
+
+            def on_time_up(question_index):
+                stop_event.set()
+                print("Time's up!")
+                # Handle what happens when time is up
+                if question_index + 1 < len(questions):
+                    display_question(question_index + 1)
+                else:
+                    show_final_screen()
+                ## proceed to next question if any
+
+            def show_final_screen():
+                self.w4.withdraw()
+                self.w5 = CTkToplevel(self.window)
+                self.w5.title("QUIZ GAME")
+
+                # Create and pack the label for the new window
+                l1 = Label(self.w5, text="ONLINE", font=("Arial 16 bold", 17))
+                l1.pack(pady=20)
+
+                # Mettre le score label en global pour le modifier plus tard
+
+                canvas2 = Canvas(self.w5, width=580, height=150, bg='ivory')
+                canvas2.pack(side=TOP, padx=10, pady=10)
+                canvas2.create_text(290, 100,
+                                    text=f" You've finished the quiz!. Score:{Joueur.score}  ",
+                                    font=("Arial 16 bold", 17),
+                                    fill="black",
+                                    width=550)
+
+                print("You've finished the quiz!")
+
             # Handle what happens when a choice is selected
             def on_choice_selected(c, question_index):
+
+                stop_event.set()
 
                 print(f"You selected: {c} for question {question_index + 1}")
                 # Check if the answer is correct
                 if c == self.question_data['correct_answer']:
                     # modification
+                    timer_thread.join()
                     self.Joueur.update_score(1)  # Update the score
                     Joueur.score += 1
 
@@ -140,32 +196,25 @@ class windows(customtkinter.CTk):
                 self.score_label.config(text=f"Score: {Joueur.score}")
 
                 if question_index + 1 < len(questions):
-                    display_question(question_index + 1)  # Display next question
+                    display_question(question_index + 1)
+                    # Display next question
                 else:
-                    self.w4.withdraw()
-                    self.w5 = CTkToplevel(self.window)
-                    self.w5.title("QUIZ GAME")
+                    show_final_screen()
 
-                    # Create and pack the label for the new window
-                    l1 = Label(self.w5, text="ONLINE", font=("Arial 16 bold", 17))
-                    l1.pack(pady=20)
-
-                    # Mettre le score label en global pour le modifier plus tard
-
-                    canvas2 = Canvas(self.w5, width=580, height=150, bg='ivory')
-                    canvas2.pack(side=TOP, padx=10, pady=10)
-                    canvas2.create_text(290, 100,
-                                        text=f" You've finished the quiz!. Score:{Joueur.score}  ",
-                                        font=("Arial 16 bold", 17),
-                                        fill="black",
-                                        width=550)
-
-                    print("You've finished the quiz!")
+                # ### fonction pour pouvir controller le changement de questions
+                # def change_questions():
+                #     if question_index + 1 < len(questions):
+                #         display_question(question_index + 1)
+                #         # Display next question
 
         # Get questions from the quiz
         if n == "ONLINE":
-            questions = self.Joueur.getquiz(4, 9, 'easy')
-            print(f"ONLINE mode: Retrieved questions: {questions}")
+            try:
+                questions = self.Joueur.getquiz(9, 9, 'easy')
+                print(f"ONLINE mode: Retrieved questions: {questions}")
+            except Exception as e:
+                print(f"Error retrieving questions: {e}")
+                questions = []
         else:
             questions = read_quiz_file()
             print(f"OFFLINE mode: Loaded questions: {questions}")
@@ -347,7 +396,8 @@ class windows(customtkinter.CTk):
     #### Accueil du jeu de quiz
 
     def Accueil(self):
-
+        # Update the Joueur's name with the value from the entry field.
+        self.Joueur.nom = self.v.get()
         ##fermeture de la premier fenetre
         self.window.withdraw()
 
@@ -362,18 +412,14 @@ class windows(customtkinter.CTk):
         l1.pack(pady=20)
 
         # Instructions text
-        cible = """Bienvenue dans le Quiz !
+        cible = self.Joueur.nom + """Bienvenue dans le Quiz ! 
     
     L'objectif de ce quiz est de tester vos connaissances sur différents sujets et de vous amuser en répondant à des questions stimulantes. Vous aurez la chance de découvrir votre niveau tout en vous divertissant !
-    
+      
     Règles du quiz:
     1. Vous avez un temps limité pour répondre à chaque question.
     2. Pour chaque question, plusieurs choix de réponses vous sont proposés. Sélectionnez la réponse qui vous semble correcte.
     3. Chaque réponse correcte vous rapporte des points. À la fin du quiz, votre score total vous sera affiché.
-    
-    Navigation:
-    - Retour : Vous pouvez revenir en arrière pour revoir les questions précédentes si vous en avez besoin. Cela vous permettra de revoir ou de modifier vos réponses.
-    - Continuer : Une fois prêt, vous pouvez continuer pour passer à la question suivante ou terminer le quiz.
     
     Bonne chance et amusez-vous bien !"""
 
